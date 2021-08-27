@@ -1,4 +1,4 @@
-import React, {useRef, useState} from "react";
+import React, {useMemo, useRef, useState} from "react";
 import './styles/app.css'
 import PostList from "./components/PostList";
 import MyButton from "./components/UI/button/MyButton";
@@ -14,7 +14,20 @@ function App() {
         {id: 4, title: 'Ruby', body: 'hello4'},
     ])
 const [selectedSort, setSelectedSort] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
     const bodyInputRef = useRef()
+
+
+    const sortedPosts = useMemo(() => {
+        if (selectedSort) {
+            return [...posts].sort((a,b) => a[selectedSort].localeCompare(b[selectedSort]))
+        }
+        return posts
+    },[selectedSort, posts])
+    const sortedAndSearchedPosts = useMemo(() => {
+        return sortedPosts.filter((post) => post.title.includes(searchQuery))
+    },[searchQuery, posts])
+
     const onPostAdd = (post) => {
         setPosts([...posts, post])
     }
@@ -23,25 +36,28 @@ const [selectedSort, setSelectedSort] = useState('')
     }
     const sortPosts = (sort) => {
         setSelectedSort(sort)
-        setPosts([...posts].sort((a,b) => a[sort].localeCompare(b[sort])))
     }
 
     return (
         <div className="app">
             <PostForm onPostAdd={onPostAdd}/>
             <hr style={{margin: '15px 0'}}/>
-            <MySelect
-                value={selectedSort}
-                onChange={sortPosts}
-                options={[
-                {value: 'title', name: 'По названию'},
-                {value: 'body', name: 'По описанию'}
-            ]}
-                defaultValue={'Сортировка'}/>
-            {posts.length !== 0
-                ? <PostList onPostRemove={onPostRemove} posts={posts} title={'Список постов'}/>
+            <div>
+                <MyInput placeholder='Поиск' value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}/>
+                <MySelect
+                    value={selectedSort}
+                    onChange={sortPosts}
+                    options={[
+                        {value: 'title', name: 'По названию'},
+                        {value: 'body', name: 'По описанию'}
+                    ]}
+                    defaultValue={'Сортировка'}/>
+                {sortedAndSearchedPosts.length !== 0
+                    ? <PostList onPostRemove={onPostRemove} posts={sortedAndSearchedPosts} title={'Список постов'}/>
 
-                : <h2 style={{textAlign:"center"}}>Постов нет!</h2>}
+                    : <h2 style={{textAlign:"center"}}>Постов нет!</h2>}
+            </div>
+
         </div>
     );
 }
