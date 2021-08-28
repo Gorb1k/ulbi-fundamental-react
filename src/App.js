@@ -1,13 +1,12 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import './styles/app.css'
 import PostList from "./components/PostList";
 import MyButton from "./components/UI/button/MyButton";
-
 import PostForm from "./components/PostForm";
 import PostFilter from "./components/PostFilter";
 import MyModal from "./components/UI/modal/MyModal";
 import {usePosts} from "./components/hooks/usePosts";
-import axios from "axios";
+import PostService from "./API/PostService";
 
 function App() {
     const [posts, setPosts] = useState([
@@ -18,7 +17,6 @@ function App() {
     ])
     const [filter, setFilter] = useState({sort: '', query: ''})
     const [modal, setModal] = useState(false)
-    const bodyInputRef = useRef()
     const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.query)
 
     const onPostAdd = (post) => {
@@ -30,8 +28,8 @@ function App() {
     }
 
     const fetchPosts = async () => {
-       const response = await axios.get('https://jsonplaceholder.typicode.com/posts')
-        setPosts(response.data)
+        const posts = PostService.getAll()
+        setPosts(posts)
     }
     useEffect(() => {
         fetchPosts()
