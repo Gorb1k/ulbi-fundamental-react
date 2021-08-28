@@ -1,10 +1,13 @@
-import React, {useMemo, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import './styles/app.css'
 import PostList from "./components/PostList";
 import MyButton from "./components/UI/button/MyButton";
-import MyInput from "./components/UI/input/MyInput";
+
 import PostForm from "./components/PostForm";
-import MySelect from "./components/UI/select/MySelect";
+import PostFilter from "./components/PostFilter";
+import MyModal from "./components/UI/modal/MyModal";
+import {usePosts} from "./components/hooks/usePosts";
+import axios from "axios";
 
 function App() {
     const [posts, setPosts] = useState([
@@ -13,50 +16,36 @@ function App() {
         {id: 3, title: 'Python', body: 'b'},
         {id: 4, title: 'Ruby', body: 'hello4'},
     ])
-const [selectedSort, setSelectedSort] = useState('')
-    const [searchQuery, setSearchQuery] = useState('')
+    const [filter, setFilter] = useState({sort: '', query: ''})
+    const [modal, setModal] = useState(false)
     const bodyInputRef = useRef()
-
-
-    const sortedPosts = useMemo(() => {
-        if (selectedSort) {
-            return [...posts].sort((a,b) => a[selectedSort].localeCompare(b[selectedSort]))
-        }
-        return posts
-    },[selectedSort, posts])
-    const sortedAndSearchedPosts = useMemo(() => {
-        return sortedPosts.filter((post) => post.title.includes(searchQuery))
-    },[searchQuery, posts])
+    const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.query)
 
     const onPostAdd = (post) => {
         setPosts([...posts, post])
+        setModal(false)
     }
     const onPostRemove = (post) => {
         setPosts(posts.filter((p) => p.id !== post.id))
     }
-    const sortPosts = (sort) => {
-        setSelectedSort(sort)
+
+    const fetchPosts = async () => {
+       const response = await axios.get('https://jsonplaceholder.typicode.com/posts')
+        setPosts(response.data)
     }
+    useEffect(() => {
+        fetchPosts()
+    }, [])
 
     return (
         <div className="app">
-            <PostForm onPostAdd={onPostAdd}/>
+            <MyButton style={{marginTop:'30px'}} onClick={() => setModal(true)}>Создать пост</MyButton>
+            <MyModal visible={modal} setVisible={setModal}>
+                <PostForm onPostAdd={onPostAdd}/>
+            </MyModal>
             <hr style={{margin: '15px 0'}}/>
-            <div>
-                <MyInput placeholder='Поиск' value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}/>
-                <MySelect
-                    value={selectedSort}
-                    onChange={sortPosts}
-                    options={[
-                        {value: 'title', name: 'По названию'},
-                        {value: 'body', name: 'По описанию'}
-                    ]}
-                    defaultValue={'Сортировка'}/>
-                {sortedAndSearchedPosts.length !== 0
-                    ? <PostList onPostRemove={onPostRemove} posts={sortedAndSearchedPosts} title={'Список постов'}/>
-
-                    : <h2 style={{textAlign:"center"}}>Постов нет!</h2>}
-            </div>
+            <PostFilter filter={filter} setFilter={setFilter}/>
+            <PostList onPostRemove={onPostRemove} posts={sortedAndSearchedPosts} title={'Список постов'}/>
 
         </div>
     );
