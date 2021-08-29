@@ -5,10 +5,11 @@
 }
 #root {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 .app {
-  width: 800px;
+  width: 100%;
 }
 .post {
   display: flex;
@@ -17,6 +18,9 @@
   margin-top: 15px;
   justify-content: space-between;
   align-items: center;
+}
+.post__btns {
+  display: flex;
 }
 .post-enter {
   opacity: 0;
@@ -48,5 +52,16 @@
 .page__current {
   border: 2px solid orangered;
   font-weight: 700;
+}
+.navbar {
+  height: 50px;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  background-color: lightcyan;
+}
+.navbar__links {
+  margin-left: auto;
 }
 /*# sourceMappingURL=app.css.map */
