@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import '../styles/app.css'
 import {usePosts} from "../hooks/usePosts";
 import PostService from "../API/PostService";
@@ -12,7 +12,7 @@ import PostList from "../components/PostList";
 import Pagination from "../components/UI/pagination/Pagination";
 import Loader from "../components/UI/loader/Loader";
 
-const Posts = ()  => {
+const Posts = () => {
     const [posts, setPosts] = useState([
         {id: 1, title: 'JavaScript', body: 'y'},
         {id: 2, title: 'Java', body: 'a'},
@@ -27,14 +27,13 @@ const Posts = ()  => {
     const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.query)
     const [fetchPosts, isPostLoading, postError] = useFetching(async () => {
         const response = await PostService.getAll(limit, page)
-        setPosts(response.data)
+        setPosts([...posts, ...response.data])
         const totalCount = response.headers['x-total-count']
         setTotalPages(getPageCount(totalCount, limit))
         console.log(totalCount)
     })
-
-
-
+    const portionEnd = useRef()
+    const observer = useRef()
 
     const onPostAdd = (post) => {
         setPosts([...posts, post])
@@ -46,9 +45,20 @@ const Posts = ()  => {
     const changePage = (page) => {
         setPage(page)
     }
+    useEffect(() => {
+    if (isPostLoading) return
+        if (observer.current) observer.current.disconnect()
+    const callback = function (entries, observer) {
+        if (entries[0].isIntersecting && page < totalPages){
+            setPage(page + 1)
+        }
+    }
+    observer.current = new IntersectionObserver(callback)
+        observer.current.observe(portionEnd.current)
+    }, [isPostLoading])
 
     useEffect(() => {
-        fetchPosts()
+        fetchPosts(limit, page)
     }, [page])
     return (
         <div className="app">
@@ -61,11 +71,10 @@ const Posts = ()  => {
             {postError &&
             <h2>Произошла ошибка: {postError}</h2>
             }
-            {isPostLoading
-                ? <div style={{display: 'flex', justifyContent: "center", marginTop: 50}}><Loader/></div>
-                : <PostList onPostRemove={onPostRemove} posts={sortedAndSearchedPosts} title={'Список постов'}/>
-            }
-            <Pagination page={page} changePage={setPage} totalPages={totalPages}/>
+            {isPostLoading && <div style={{display: 'flex', justifyContent: "center", marginTop: 50}}><Loader/></div>}
+            <PostList onPostRemove={onPostRemove} posts={sortedAndSearchedPosts} title={'Список постов'}/>
+            <div ref={portionEnd} style={{height:20, background: "blue"}}/>
+            <Pagination page={page} changePage={changePage} totalPages={totalPages}/>
 
         </div>
     );
