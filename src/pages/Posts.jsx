@@ -11,6 +11,8 @@ import PostFilter from "../components/PostFilter";
 import PostList from "../components/PostList";
 import Pagination from "../components/UI/pagination/Pagination";
 import Loader from "../components/UI/loader/Loader";
+import {useObserver} from "../hooks/useObserver";
+import MySelect from "../components/UI/select/MySelect";
 
 const Posts = () => {
     const [posts, setPosts] = useState([
@@ -33,7 +35,6 @@ const Posts = () => {
         console.log(totalCount)
     })
     const portionEnd = useRef()
-    const observer = useRef()
 
     const onPostAdd = (post) => {
         setPosts([...posts, post])
@@ -45,21 +46,12 @@ const Posts = () => {
     const changePage = (page) => {
         setPage(page)
     }
-    useEffect(() => {
-    if (isPostLoading) return
-        if (observer.current) observer.current.disconnect()
-    const callback = function (entries, observer) {
-        if (entries[0].isIntersecting && page < totalPages){
-            setPage(page + 1)
-        }
-    }
-    observer.current = new IntersectionObserver(callback)
-        observer.current.observe(portionEnd.current)
-    }, [isPostLoading])
+
+    useObserver(portionEnd, page < totalPages, isPostLoading, () => {setPage(page+1)})
 
     useEffect(() => {
         fetchPosts(limit, page)
-    }, [page])
+    }, [page, limit])
     return (
         <div className="app">
             <MyButton style={{marginTop: '30px'}} onClick={() => setModal(true)}>Создать пост</MyButton>
@@ -68,6 +60,17 @@ const Posts = () => {
             </MyModal>
             <hr style={{margin: '15px 0'}}/>
             <PostFilter filter={filter} setFilter={setFilter}/>
+            <MySelect value={limit}
+                      onChange={(value) => setLimit(value)}
+                      defaultValue={"Количество элементов на странице"}
+                      options={[
+                          {value: 5, name:'5'},
+                          {value: 10, name:'10'},
+                          {value: 15, name:'15'},
+                          {value: 20, name:'20'},
+                          {value: -1, name:'Show all'},
+                      ]}
+            />
             {postError &&
             <h2>Произошла ошибка: {postError}</h2>
             }
